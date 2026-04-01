@@ -68,6 +68,7 @@ struct HardExitComponent final
 	{
 		core = c;
 		g_core = c;
+		core->logLn(LogLevel::Message, "  (c) Italy Mafia Roleplay (www.sa-mp.im)");
 	}
 
 	void onInit(IComponentList* components) override
