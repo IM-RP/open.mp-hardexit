@@ -1,0 +1,111 @@
+name: Build HardExit
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-22.04
+            artifact: HardExit.so
+          - os: windows-latest
+            artifact: HardExit.dll
+
+    runs-on: ${{ matrix.os }}
+    permissions:
+      contents: write
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Generate version number
+      id: version
+      shell: bash
+      run: |
+        VERSION=$(git rev-list --count HEAD)
+        SHORT_SHA=$(git rev-parse --short HEAD)
+        COMMIT_TITLE=$(git log -1 --format=%s)
+        echo "VERSION_NUM=$VERSION" >> "$GITHUB_OUTPUT"
+        echo "SHORT_SHA=$SHORT_SHA" >> "$GITHUB_OUTPUT"
+        echo "COMMIT_TITLE=$COMMIT_TITLE" >> "$GITHUB_OUTPUT"
+        echo "Version: $VERSION ($SHORT_SHA)"
+
+    - name: Configure CMake (Linux)
+      if: runner.os == 'Linux'
+      run: |
+        cmake -B build -DCMAKE_BUILD_TYPE=Release \
+          -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++
+
+    - name: Configure CMake (Windows)
+      if: runner.os == 'Windows'
+      run: cmake -B build -A Win32 -T ClangCL
+
+    - name: Build
+      run: cmake --build build --config Release
+
+    - name: Find and rename artifact (Linux)
+      if: runner.os == 'Linux'
+      run: |
+        find build -name "HardExit.so" -exec cp {} "HardExit_v${{ steps.version.outputs.VERSION_NUM }}.so" \;
+
+    - name: Find and rename artifact (Windows)
+      if: runner.os == 'Windows'
+      shell: bash
+      run: |
+        find build -name "HardExit.dll" -exec cp {} "HardExit_v${{ steps.version.outputs.VERSION_NUM }}.dll" \;
+
+    - name: Upload artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: HardExit-${{ runner.os }}-v${{ steps.version.outputs.VERSION_NUM }}
+        path: HardExit_v${{ steps.version.outputs.VERSION_NUM }}.*
+        if-no-files-found: error
+
+  release:
+    needs: build
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Generate version number
+      id: version
+      run: |
+        VERSION=$(git rev-list --count HEAD)
+        COMMIT_TITLE=$(git log -1 --format=%s)
+        echo "VERSION_NUM=$VERSION" >> "$GITHUB_OUTPUT"
+        echo "COMMIT_TITLE=$COMMIT_TITLE" >> "$GITHUB_OUTPUT"
+
+    - name: Download all artifacts
+      uses: actions/download-artifact@v4
+      with:
+        path: artifacts
+        merge-multiple: true
+
+    - name: List artifacts
+      run: find artifacts -type f
+
+    - name: Create GitHub Release
+      uses: softprops/action-gh-release@v2
+      with:
+        tag_name: v${{ steps.version.outputs.VERSION_NUM }}
+        name: Release v${{ steps.version.outputs.VERSION_NUM }}
+        body: ${{ steps.version.outputs.COMMIT_TITLE }}
+        files: artifacts/*
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
