@@ -16,10 +16,23 @@
 
 #include <cstdlib>
 
+#ifndef HARDEXIT_VERSION_MAJOR
+#define HARDEXIT_VERSION_MAJOR 1
+#define HARDEXIT_VERSION_MINOR 0
+#define HARDEXIT_VERSION_PATCH 0
+#define HARDEXIT_VERSION_PREREL 0
+#endif
+
+static ICore* g_core = nullptr;
+
 // -- Pawn native --------------------------------------------------------------
 
 static cell AMX_NATIVE_CALL n_HardExit(AMX*, const cell*)
 {
+	if (g_core)
+	{
+		g_core->logLn(LogLevel::Message, "HardExit: non-graceful server termination initiated via script.");
+	}
 	std::abort();
 	return 0;
 }
@@ -46,11 +59,15 @@ struct HardExitComponent final
 
 	StringView componentName() const override { return "HardExit"; }
 
-	SemanticVersion componentVersion() const override { return SemanticVersion(1, 0, 0, 0); }
+	SemanticVersion componentVersion() const override
+	{
+		return SemanticVersion(HARDEXIT_VERSION_MAJOR, HARDEXIT_VERSION_MINOR, HARDEXIT_VERSION_PATCH, HARDEXIT_VERSION_PREREL);
+	}
 
 	void onLoad(ICore* c) override
 	{
 		core = c;
+		g_core = c;
 	}
 
 	void onInit(IComponentList* components) override
@@ -92,7 +109,7 @@ struct HardExitComponent final
 	{
 		if (command == "hardexit")
 		{
-			core->logLn(LogLevel::Message, "HardExit: terminating server process immediately.");
+			core->logLn(LogLevel::Message, "HardExit: non-graceful server termination initiated via console.");
 			std::abort();
 			return true;
 		}

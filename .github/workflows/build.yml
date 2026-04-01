@@ -37,7 +37,7 @@ jobs:
         echo "VERSION_NUM=$VERSION" >> "$GITHUB_OUTPUT"
         echo "SHORT_SHA=$SHORT_SHA" >> "$GITHUB_OUTPUT"
         echo "COMMIT_TITLE=$COMMIT_TITLE" >> "$GITHUB_OUTPUT"
-        echo "Version: $VERSION ($SHORT_SHA)"
+        echo "Version: 1.0.0.$VERSION ($SHORT_SHA)"
 
     - name: Install 32-bit toolchain (Linux)
       if: runner.os == 'Linux'
@@ -50,31 +50,30 @@ jobs:
       if: runner.os == 'Linux'
       run: |
         cmake -B build -DCMAKE_BUILD_TYPE=Release \
-          -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++
+          -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ \
+          -DHARDEXIT_BUILD_NUMBER=${{ steps.version.outputs.VERSION_NUM }}
 
     - name: Configure CMake (Windows)
       if: runner.os == 'Windows'
-      run: cmake -B build -A Win32 -T ClangCL
+      run: cmake -B build -A Win32 -T ClangCL -DHARDEXIT_BUILD_NUMBER=${{ steps.version.outputs.VERSION_NUM }}
 
     - name: Build
       run: cmake --build build --config Release
 
-    - name: Find and rename artifact (Linux)
+    - name: Copy artifact (Linux)
       if: runner.os == 'Linux'
-      run: |
-        find build -name "HardExit.so" -exec cp {} "HardExit_v${{ steps.version.outputs.VERSION_NUM }}.so" \;
+      run: find build -name "HardExit.so" -exec cp {} HardExit.so \;
 
-    - name: Find and rename artifact (Windows)
+    - name: Copy artifact (Windows)
       if: runner.os == 'Windows'
       shell: bash
-      run: |
-        find build -name "HardExit.dll" -exec cp {} "HardExit_v${{ steps.version.outputs.VERSION_NUM }}.dll" \;
+      run: find build -name "HardExit.dll" -exec cp {} HardExit.dll \;
 
     - name: Upload artifact
       uses: actions/upload-artifact@v5
       with:
-        name: HardExit-${{ runner.os }}-v${{ steps.version.outputs.VERSION_NUM }}
-        path: HardExit_v${{ steps.version.outputs.VERSION_NUM }}.*
+        name: HardExit-${{ runner.os }}
+        path: ${{ matrix.artifact }}
         if-no-files-found: error
 
   release:
@@ -110,9 +109,11 @@ jobs:
     - name: Create GitHub Release
       uses: softprops/action-gh-release@v2
       with:
-        tag_name: v${{ steps.version.outputs.VERSION_NUM }}
-        name: Release v${{ steps.version.outputs.VERSION_NUM }}
+        tag_name: v1.0.0.${{ steps.version.outputs.VERSION_NUM }}
+        name: HardExit v1.0.0.${{ steps.version.outputs.VERSION_NUM }}
         body: ${{ steps.version.outputs.COMMIT_TITLE }}
-        files: artifacts/*
+        files: |
+          artifacts/*
+          hardexit.inc
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
