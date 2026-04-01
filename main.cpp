@@ -18,7 +18,7 @@
 
 // -- Pawn native --------------------------------------------------------------
 
-static cell AMX_NATIVE_CALL n_HardExit(AMX*, cell*)
+static cell AMX_NATIVE_CALL n_HardExit(AMX*, const cell*)
 {
 	std::abort();
 	return 0;

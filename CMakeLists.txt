@@ -35,6 +35,12 @@ target_include_directories(${PROJECT_NAME} PRIVATE
 	${pawn_SOURCE_DIR}/source
 )
 
+# Prevent amx.h from redefining standard integer types
+target_compile_definitions(${PROJECT_NAME} PRIVATE
+	HAVE_STDINT_H
+	PAWN_CELL_SIZE=32
+)
+
 if(NOT MSVC)
 	target_compile_options(${PROJECT_NAME} PRIVATE -fvisibility=hidden)
 endif()
