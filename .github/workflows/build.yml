@@ -23,7 +23,7 @@ jobs:
 
     steps:
     - name: Checkout code
-      uses: actions/checkout@v4
+      uses: actions/checkout@v5
       with:
         fetch-depth: 0
 
@@ -71,7 +71,7 @@ jobs:
         find build -name "HardExit.dll" -exec cp {} "HardExit_v${{ steps.version.outputs.VERSION_NUM }}.dll" \;
 
     - name: Upload artifact
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v5
       with:
         name: HardExit-${{ runner.os }}-v${{ steps.version.outputs.VERSION_NUM }}
         path: HardExit_v${{ steps.version.outputs.VERSION_NUM }}.*
@@ -86,7 +86,7 @@ jobs:
 
     steps:
     - name: Checkout code
-      uses: actions/checkout@v4
+      uses: actions/checkout@v5
       with:
         fetch-depth: 0
 
@@ -99,7 +99,7 @@ jobs:
         echo "COMMIT_TITLE=$COMMIT_TITLE" >> "$GITHUB_OUTPUT"
 
     - name: Download all artifacts
-      uses: actions/download-artifact@v4
+      uses: actions/download-artifact@v5
       with:
         path: artifacts
         merge-multiple: true
