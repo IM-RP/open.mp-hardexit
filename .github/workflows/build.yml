@@ -39,6 +39,13 @@ jobs:
         echo "COMMIT_TITLE=$COMMIT_TITLE" >> "$GITHUB_OUTPUT"
         echo "Version: $VERSION ($SHORT_SHA)"
 
+    - name: Install 32-bit toolchain (Linux)
+      if: runner.os == 'Linux'
+      run: |
+        sudo dpkg --add-architecture i386
+        sudo apt-get update
+        sudo apt-get install -y gcc-multilib g++-multilib
+
     - name: Configure CMake (Linux)
       if: runner.os == 'Linux'
       run: |

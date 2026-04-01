@@ -41,7 +41,11 @@ target_compile_definitions(${PROJECT_NAME} PRIVATE
 	PAWN_CELL_SIZE=32
 )
 
-if(NOT MSVC)
+# open.mp server is 32-bit
+if(UNIX AND NOT APPLE)
+	target_compile_options(${PROJECT_NAME} PRIVATE -m32 -fvisibility=hidden)
+	target_link_options(${PROJECT_NAME} PRIVATE -m32)
+elseif(NOT MSVC)
 	target_compile_options(${PROJECT_NAME} PRIVATE -fvisibility=hidden)
 endif()
 
