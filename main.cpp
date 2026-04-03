@@ -1,7 +1,7 @@
 /*
  *  HardExit component for open.mp
  *
- *  Terminates the server process immediately via std::abort() so that no
+ *  Terminates the server process immediately via std::_Exit() so that no
  *  RakNet disconnect packet is sent to clients.  Players see "Lost connection
  *  to the server" (timeout) instead of "Server closed the connection".
  *
@@ -33,7 +33,7 @@ static cell AMX_NATIVE_CALL n_HardExit(AMX*, const cell*)
 	{
 		g_core->logLn(LogLevel::Message, "HardExit: non-graceful server termination initiated via script.");
 	}
-	std::abort();
+	std::_Exit(EXIT_SUCCESS);
 	return 0;
 }
 
@@ -111,7 +111,7 @@ struct HardExitComponent final
 		if (command == "hardexit")
 		{
 			core->logLn(LogLevel::Message, "HardExit: non-graceful server termination initiated via console.");
-			std::abort();
+			std::_Exit(EXIT_SUCCESS);
 			return true;
 		}
 		return false;
